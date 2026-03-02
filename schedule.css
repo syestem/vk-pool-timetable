@@ -1,12 +1,12 @@
 body {
   margin: 0;
   padding: 16px;
-  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Arial;
+  font-family: -apple-system, BlinkMacSystemFont, Roboto, Arial;
   background: #f5f6f8;
 }
 
 .card {
-  max-width: 1000px;
+  max-width: 960px;
   margin: auto;
   background: #fff;
   border-radius: 14px;
@@ -24,30 +24,34 @@ h2 {
   margin-bottom: 12px;
 }
 
-button, select {
-  padding: 8px 12px;
+.group {
+  display: flex;
+  gap: 6px;
+}
+
+button {
+  border: 1px solid #e1e3e6;
+  background: #e5e7ea;
   border-radius: 8px;
-  border: none;
-  background: #e5e7eb;
+  padding: 6px 12px;
   cursor: pointer;
 }
 
 button.primary {
   background: #2a5885;
   color: #fff;
+  border-color: transparent;
 }
 
 .tabs {
   display: flex;
   gap: 6px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   flex-wrap: wrap;
 }
 
 .tabs button {
-  padding: 6px 10px;
-  border-radius: 8px;
-  background: #e5e7eb;
+  background: #e5e7ea;
 }
 
 .tabs button.active {
@@ -58,22 +62,17 @@ button.primary {
 .grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  gap: 10px;
 }
 
 .slot {
-  background: #f9fafb;
+  background: #f8f9fa;
   border-radius: 12px;
   padding: 10px;
 }
 
 .slot.now {
-  border: 2px solid #ff9800;
-}
-
-.slot.best {
-  border: 2px solid #4bb34b;
-  background: #f2fff2;
+  outline: 2px solid #2a5885;
 }
 
 .time {
@@ -82,27 +81,25 @@ button.primary {
 }
 
 .count {
-  font-size: 13px;
-  color: #555;
   margin-left: 6px;
+  color: #6d7885;
+  font-weight: normal;
 }
 
 .badge {
-  display: inline-block;
   margin-left: 6px;
+  font-size: 11px;
   padding: 2px 6px;
   border-radius: 6px;
-  font-size: 11px;
-  font-weight: 600;
 }
 
 .badge.now {
-  background: #ff9800;
+  background: #2a5885;
   color: #fff;
 }
 
 .badge.full {
-  background: #e53935;
+  background: #e06666;
   color: #fff;
 }
 
@@ -113,18 +110,24 @@ button.primary {
 }
 
 .lane {
-  width: 36px;
+  min-width: 28px;
   text-align: center;
-  padding: 6px 0;
+  padding: 4px 6px;
   border-radius: 6px;
   font-size: 13px;
 }
 
 .lane.free {
-  background: #e6f6ea;
+  background: #e6f4ea;
 }
 
 .lane.busy {
-  background: #e57373;
+  background: #e06666;
   color: #fff;
+}
+
+.slot.empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: #6d7885;
 }
