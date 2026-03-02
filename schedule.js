@@ -1,93 +1,137 @@
+/* ===============================
+   ENV & VK INIT (SAFE)
+================================ */
+const isVK = typeof window.vkBridge !== 'undefined';
+
+if (isVK) {
+  vkBridge.send('VKWebAppInit').catch(() => {});
+  vkBridge.subscribe(e => {
+    if (e.detail.type === 'VKWebAppUpdateConfig') {
+      document.body.classList.toggle(
+        'dark',
+        e.detail.data.scheme.includes('dark')
+      );
+    }
+  });
+}
+
+/* ===============================
+   CONSTANTS
+================================ */
 const SHEET_ID_TIMETABLE = '11yaPysnuMfkXtwvZSOOohogKnvT0py7rWuKNyAs5ud8';
 const SCHEDULE_INDEX_GID = 887181046;
 
-const DAYS = ['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье'];
+const DAYS = [
+  'Понедельник',
+  'Вторник',
+  'Среда',
+  'Четверг',
+  'Пятница',
+  'Суббота',
+  'Воскресенье'
+];
 
+/* ===============================
+   STATE
+================================ */
 let scheduleIndex = [];
 let parsed = {};
 let activeDay = null;
 let activePool = 'big';
-let onlyFree = false;
-let minConsecutive = 0;
+let minFreeLanes = 0;
 
-const content = document.getElementById('scheduleContent');
-const dayTabs = document.getElementById('dayTabs');
+/* ===============================
+   DOM
+================================ */
 const titleEl = document.getElementById('title');
-const poolButtons = document.querySelectorAll('[data-pool]');
-const onlyFreeBtn = document.getElementById('onlyFreeBtn');
+const contentEl = document.getElementById('scheduleContent');
+const dayTabsEl = document.getElementById('dayTabs');
+const poolBtns = document.querySelectorAll('[data-pool]');
+const filterBtns = document.querySelectorAll('[data-filter]');
 const showAllBtn = document.getElementById('showAllBtn');
-const laneFilter = document.getElementById('laneFilter');
 
-init();
+/* ===============================
+   INIT
+================================ */
+document.addEventListener('DOMContentLoaded', init);
 
 async function init() {
   titleEl.textContent = `Расписание бассейна на ${getCurrentMonth()}`;
 
-  poolButtons.forEach(btn => {
-    btn.onclick = () => {
-      poolButtons.forEach(b => b.classList.remove('primary'));
+  bindUI();
+
+  if (scheduleIndex.length === 0) {
+    await loadScheduleIndex();
+  }
+
+  await loadScheduleForCurrentMonth();
+  scheduleMidnightSwitch();
+}
+
+/* ===============================
+   UI BINDINGS
+================================ */
+function bindUI() {
+  poolBtns.forEach(btn => {
+    btn.onclick = async () => {
+      poolBtns.forEach(b => b.classList.remove('primary'));
       btn.classList.add('primary');
       activePool = btn.dataset.pool;
-      init();
+      await loadScheduleForCurrentMonth();
     };
   });
 
-  onlyFreeBtn.onclick = () => {
-    onlyFree = !onlyFree;
-    onlyFreeBtn.classList.toggle('primary', onlyFree);
-    renderDay();
-  };
+  filterBtns.forEach(btn => {
+    btn.onclick = () => {
+      filterBtns.forEach(b => b.classList.remove('primary'));
+      btn.classList.add('primary');
+      minFreeLanes = Number(btn.dataset.filter);
+      renderDay();
+    };
+  });
 
   showAllBtn.onclick = () => {
-  onlyFree = false;
-  minConsecutive = 0;
-
-  onlyFreeBtn.classList.remove('primary');
-  laneFilter.value = '0';   // ← визуально сбрасываем select
-
-  renderDay();
-  };
-
-  laneFilter.onchange = e => {
-    minConsecutive = Number(e.target.value);
+    minFreeLanes = 0;
+    filterBtns.forEach(b => b.classList.remove('primary'));
     renderDay();
   };
+}
 
-  if (!scheduleIndex.length) await loadIndex();
+/* ===============================
+   DATA LOAD
+================================ */
+async function loadScheduleIndex() {
+  const text = await fetch(
+    `https://docs.google.com/spreadsheets/d/${SHEET_ID_TIMETABLE}/export?format=csv&gid=${SCHEDULE_INDEX_GID}`
+  ).then(r => r.text());
 
+  const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/);
+
+  scheduleIndex = lines.slice(1).map(l => {
+    const c = l.split(',');
+    return {
+      month: normalize(c[0]),
+      big: c[1] ? Number(c[1]) : null,
+      small: c[2] ? Number(c[2]) : null
+    };
+  });
+}
+
+async function loadScheduleForCurrentMonth() {
   const entry = findMonth();
   if (!entry || !entry[activePool]) {
-    content.textContent = 'Нет расписания';
+    contentEl.innerHTML = '<div class="slot empty">Нет расписания</div>';
     return;
   }
 
   const rows = await fetchCSV(entry[activePool]);
-  parsed = parseLaneSchedule(rows);
+  parsed = parseSchedule(rows);
 
   const today = getCurrentWeekDay();
   activeDay = parsed[today] ? today : Object.keys(parsed)[0];
 
   renderDayTabs();
   renderDay();
-  scheduleMidnightSwitch();
-}
-
-/* ===== FETCH ===== */
-
-async function loadIndex() {
-  const text = await fetch(
-    `https://docs.google.com/spreadsheets/d/${SHEET_ID_TIMETABLE}/export?format=csv&gid=${SCHEDULE_INDEX_GID}`
-  ).then(r => r.text());
-
-  text.replace(/^\uFEFF/, '').split(/\r?\n/).slice(1).forEach(l => {
-    const c = l.split(',');
-    if (!c[0]) return;
-    scheduleIndex.push({
-      month: c[0].trim(),
-      big: c[1] ? Number(c[1]) : null,
-      small: c[2] ? Number(c[2]) : null
-    });
-  });
 }
 
 async function fetchCSV(gid) {
@@ -98,95 +142,92 @@ async function fetchCSV(gid) {
   return text.replace(/^\uFEFF/, '').split(/\r?\n/).map(r => r.split(','));
 }
 
-/* ===== PARSER ===== */
-
-function parseLaneSchedule(rows) {
-  const res = {};
+/* ===============================
+   PARSER
+================================ */
+function parseSchedule(rows) {
+  const result = {};
   const timeRow = rows.findIndex(r => r[0]?.toLowerCase().includes('время'));
-  if (timeRow === -1) return res;
+  if (timeRow === -1) return result;
 
   const times = [];
   const cols = [];
 
   rows[timeRow].forEach((c, i) => {
-    if (/\d{1,2}:\d{2}-\d{1,2}:\d{2}/.test(c)) {
+    if (/\d{1,2}:\d{2}\s*[-–]\s*\d{1,2}:\d{2}/.test(c)) {
       times.push(c.trim());
       cols.push(i);
     }
   });
 
   for (let i = timeRow + 1; i < rows.length; i++) {
-    if (!DAYS.includes(rows[i][0])) continue;
-    const day = rows[i][0];
-    res[day] = times.map(t => ({ time: t, lanes: [] }));
+    const row = rows[i];
+    if (!row?.[0]) continue;
 
-    // дорожка 1 — в строке дня
-    cols.forEach((c, idx) => {
-      res[day][idx].lanes.push({
-        lane: 1,
-        busy: Boolean(rows[i][c]?.trim())
-      });
-    });
+    if (DAYS.includes(row[0])) {
+      const day = row[0];
+      result[day] = times.map(t => ({
+        time: t,
+        lanes: []
+      }));
 
-    let r = i + 1;
-    while (r < rows.length && !DAYS.includes(rows[r][0])) {
-      const lane = Number(rows[r][2]);
-      if (lane >= 2 && lane <= 6) {
-        cols.forEach((c, idx) => {
-          res[day][idx].lanes.push({
-            lane,
-            busy: Boolean(rows[r][c]?.trim())
+      let r = i + 1;
+      while (r < rows.length && !DAYS.includes(rows[r]?.[0])) {
+        const lane = Number(rows[r]?.[2]);
+        if (lane >= 1 && lane <= 6) {
+          cols.forEach((col, idx) => {
+            result[day][idx].lanes.push({
+              lane,
+              busy: Boolean(rows[r][col]?.trim())
+            });
           });
-        });
+        }
+        r++;
       }
-      r++;
+      i = r - 1;
     }
-    i = r - 1;
   }
-  return res;
+
+  return result;
 }
 
-/* ===== RENDER ===== */
-
+/* ===============================
+   RENDER
+================================ */
 function renderDayTabs() {
-  dayTabs.innerHTML = '';
-  Object.keys(parsed).forEach(d => {
+  dayTabsEl.innerHTML = '';
+  Object.keys(parsed).forEach(day => {
     const b = document.createElement('button');
-    b.textContent = d;
-    b.className = d === activeDay ? 'active' : '';
+    b.textContent = day;
+    b.className = day === activeDay ? 'active' : '';
     b.onclick = () => {
-      activeDay = d;
+      activeDay = day;
       renderDayTabs();
       renderDay();
     };
-    dayTabs.appendChild(b);
+    dayTabsEl.appendChild(b);
   });
 }
 
 function renderDay() {
-  content.innerHTML = '';
+  contentEl.innerHTML = '';
   const today = getCurrentWeekDay();
 
-  const slots = parsed[activeDay];
-  const maxFree = Math.max(...slots.map(s => s.lanes.filter(l => !l.busy).length));
+  parsed[activeDay].forEach(slot => {
+    const total = slot.lanes.length;
+    const free = slot.lanes.filter(l => !l.busy).length;
 
-  slots.forEach(slot => {
-    const freeLanes = slot.lanes.filter(l => !l.busy).map(l => l.lane);
-    const free = freeLanes.length;
-
-    if (onlyFree && free === 0) return;
-    if (!hasConsecutive(freeLanes, minConsecutive)) return;
+    if (free < minFreeLanes) return;
 
     const isNow = activeDay === today && isNowInSlot(slot.time);
-    const isBest = free === maxFree && free > 0;
 
     const div = document.createElement('div');
-    div.className = `slot${isNow ? ' now' : ''}${isBest ? ' best' : ''}`;
+    div.className = `slot${isNow ? ' now' : ''}`;
 
     div.innerHTML = `
       <div class="time">
         ${slot.time}
-        <span class="count">Свободно: ${free}/6</span>
+        <span class="count">Свободно: ${free}/${total}</span>
         ${isNow ? '<span class="badge now">СЕЙЧАС</span>' : ''}
         ${free === 0 ? '<span class="badge full">Все дорожки заняты</span>' : ''}
       </div>
@@ -197,35 +238,32 @@ function renderDay() {
       </div>
     `;
 
-    content.appendChild(div);
+    contentEl.appendChild(div);
   });
+
+  if (!contentEl.children.length) {
+    contentEl.innerHTML = `<div class="slot empty">Нет подходящих слотов</div>`;
+  }
 
   if (activeDay === today) {
     setTimeout(() => {
-      const el = document.querySelector('.slot.now');
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      document.querySelector('.slot.now')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+      });
     }, 0);
   }
 }
 
-/* ===== HELPERS ===== */
+/* ===============================
+   HELPERS
+================================ */
+function normalize(s = '') {
+  return s.replace(/\s+/g, ' ').trim().toLowerCase();
+}
 
-function hasConsecutive(arr, n) {
-  if (n === 0) return true;          // ← НОВОЕ: режим "Все"
-  if (n === 1) return arr.length > 0;
-
-  arr.sort((a, b) => a - b);
-  let streak = 1;
-
-  for (let i = 1; i < arr.length; i++) {
-    if (arr[i] === arr[i - 1] + 1) {
-      streak++;
-      if (streak >= n) return true;
-    } else {
-      streak = 1;
-    }
-  }
-  return false;
+function findMonth() {
+  return scheduleIndex.find(m => m.month === normalize(getCurrentMonth()));
 }
 
 function getCurrentMonth() {
@@ -240,33 +278,32 @@ function getCurrentWeekDay() {
 }
 
 function isNowInSlot(t) {
+  const [s, e] = t.split('-');
   const now = new Date();
-  const [s, e] = t.split('-').map(x => {
-    const [h, m] = x.split(':').map(Number);
-    const d = new Date();
-    d.setHours(h, m, 0, 0);
-    return d;
-  });
-  return now >= s && now <= e;
+  const a = s.split(':').map(Number);
+  const b = e.split(':').map(Number);
+  const start = new Date(now);
+  const end = new Date(now);
+  start.setHours(a[0], a[1], 0, 0);
+  end.setHours(b[0], b[1], 0, 0);
+  return now >= start && now <= end;
 }
 
-function normalize(s) {
-  return s.toLowerCase().replace(/\s+/g, ' ').trim();
-}
-
-function findMonth() {
-  const cur = normalize(getCurrentMonth());
-  return scheduleIndex.find(m => normalize(m.month) === cur);
-}
-
+/* ===============================
+   MIDNIGHT SWITCH
+================================ */
 function scheduleMidnightSwitch() {
   const now = new Date();
   const ms =
     new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1) - now;
+
   setTimeout(() => {
-    activeDay = getCurrentWeekDay();
-    renderDayTabs();
-    renderDay();
+    const today = getCurrentWeekDay();
+    if (parsed[today]) {
+      activeDay = today;
+      renderDayTabs();
+      renderDay();
+    }
     scheduleMidnightSwitch();
   }, ms + 1000);
 }
