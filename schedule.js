@@ -17,7 +17,19 @@ let parsed = {};
 let activeDay = null;
 let activePool = 'big';
 let minFreeLanes = 0;
+const laneFilter = document.getElementById('laneFilter');
+const showAllBtn = document.getElementById('showAllBtn');
 
+laneFilter.onchange = () => {
+  minFreeLanes = Number(laneFilter.value);
+  renderDay();
+};
+
+showAllBtn.onclick = () => {
+  minFreeLanes = 0;
+  laneFilter.value = '0';
+  renderDay();
+};
 /* ================= DOM ================= */
 const titleEl = document.getElementById('title');
 const contentEl = document.getElementById('scheduleContent');
