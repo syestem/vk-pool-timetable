@@ -116,7 +116,8 @@ function parseSchedule(rows) {
     let r = i+1;
 
     while (rows[r] && !DAYS.includes(rows[r][0])) {
-      const lane = Number(rows[r][2]);
+      const laneCell = rows[r].find(c => /^[1-6]$/.test(c?.trim()));
+      const lane = Number(laneCell);
       if (lane >= 1 && lane <= 6) {
         cols.forEach((c,idx)=>{
           res[day][idx].lanes.push({
