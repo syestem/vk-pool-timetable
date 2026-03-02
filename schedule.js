@@ -120,28 +120,32 @@ function parseSchedule(rows) {
     }
   });
 
-  for (let i = timeRow+1; i < rows.length; i++) {
-    const day = rows[i][0];
-    if (!DAYS.includes(day)) continue;
+  if (DAYS.includes(rows[i][0])) {
+  const day = rows[i][0];
+  result[day] = times.map(t => ({ time: t, lanes: [] }));
 
-    res[day] = times.map(t => ({ time:t, lanes:[] }));
-    let r = i+1;
+  let r = i; // ← ВАЖНО
 
-    while (rows[r] && !DAYS.includes(rows[r][0])) {
-      const laneCell = rows[r].find(c => /^[1-6]$/.test(c?.trim()));
-      const lane = Number(laneCell);
-      if (lane >= 1 && lane <= 6) {
-        cols.forEach((c,idx)=>{
-          res[day][idx].lanes.push({
-            lane,
-            busy: Boolean(rows[r][c]?.trim())
-          });
+  while (rows[r] && !DAYS.includes(rows[r][0]) || r === i) {
+
+    const laneCell = rows[r].find(c => /^[1-6]$/.test(c?.trim()));
+    const lane = Number(laneCell);
+
+    if (lane >= 1 && lane <= 6) {
+      timeCols.forEach((col, idx) => {
+        const cell = rows[r][col];
+        result[day][idx].lanes.push({
+          lane,
+          busy: Boolean(cell && cell.trim())
         });
-      }
-      r++;
+      });
     }
-    i = r-1;
+
+    r++;
   }
+
+  i = r - 1;
+}
   return res;
 }
 
