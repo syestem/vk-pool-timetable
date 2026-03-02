@@ -14,12 +14,14 @@
   <h2 id="title"></h2>
 
   <div class="controls">
-    <div class="group">
+
+  <div class="controls-row">
+    <div class="controls-group">
       <button data-pool="big" class="primary">Большой бассейн</button>
       <button data-pool="small">Малый бассейн</button>
     </div>
 
-    <div class="filters">
+    <div class="controls-group right">
       <select id="laneFilter">
         <option value="0">Все</option>
         <option value="1">Любая свободная</option>
@@ -28,13 +30,15 @@
         <option value="4">От 4 дорожек</option>
         <option value="5">От 5 дорожек</option>
         <option value="6">От 6 дорожек</option>
-  </select>
+      </select>
 
-  <button id="showAllBtn">Показать всё</button>
-</div>
+      <button id="showAllBtn" class="ghost">Показать всё</button>
+    </div>
   </div>
 
-  <div id="dayTabs" class="tabs"></div>
+  <div class="controls-row days" id="dayTabs"></div>
+
+</div>
 
   <div id="scheduleContent" class="grid"></div>
 </div>
