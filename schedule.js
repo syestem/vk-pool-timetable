@@ -171,6 +171,12 @@ function renderDayTabs() {
 }
 
 function renderDay() {
+  const maxFree = Math.max(
+  ...parsed[activeDay].map(s =>
+    s.lanes.filter(l => !l.busy).length
+  ),
+  0
+);
   contentEl.innerHTML = '';
 
   if (!parsed[activeDay]) {
@@ -190,7 +196,12 @@ function renderDay() {
     const isNow = activeDay === today && isNowIn(slot.time);
 
     const div = document.createElement('div');
-    div.className = 'slot' + (isNow ? ' now' : '');
+    const isBest = free === maxFree && maxFree > 0;
+
+div.className =
+  'slot' +
+  (isNow ? ' now' : '') +
+  (isBest ? ' best' : '');
 
     div.innerHTML = `
       <div class="time">
