@@ -8,7 +8,7 @@ let parsed = {};
 let activeDay = null;
 let activePool = 'big';
 let onlyFree = false;
-let minConsecutive = 1;
+let minConsecutive = 0;
 
 const content = document.getElementById('scheduleContent');
 const dayTabs = document.getElementById('dayTabs');
@@ -39,9 +39,13 @@ async function init() {
   };
 
   showAllBtn.onclick = () => {
-    onlyFree = false;
-    onlyFreeBtn.classList.remove('primary');
-    renderDay();
+  onlyFree = false;
+  minConsecutive = 0;
+
+  onlyFreeBtn.classList.remove('primary');
+  laneFilter.value = '0';   // ← визуально сбрасываем select
+
+  renderDay();
   };
 
   laneFilter.onchange = e => {
@@ -207,14 +211,19 @@ function renderDay() {
 /* ===== HELPERS ===== */
 
 function hasConsecutive(arr, n) {
+  if (n === 0) return true;          // ← НОВОЕ: режим "Все"
   if (n === 1) return arr.length > 0;
+
   arr.sort((a, b) => a - b);
   let streak = 1;
+
   for (let i = 1; i < arr.length; i++) {
     if (arr[i] === arr[i - 1] + 1) {
       streak++;
       if (streak >= n) return true;
-    } else streak = 1;
+    } else {
+      streak = 1;
+    }
   }
   return false;
 }
