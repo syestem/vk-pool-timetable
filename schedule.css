@@ -98,6 +98,16 @@ button.primary {
   color: #fff;
 }
 
+.slot.best {
+  border: 1px solid rgba(76, 175, 80, 0.5);
+  background: rgba(76, 175, 80, 0.08);
+}
+
+.badge.best {
+  background: #4caf50;
+  color: #fff;
+}
+
 .badge.full {
   background: #e06666;
   color: #fff;
