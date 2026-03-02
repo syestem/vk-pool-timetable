@@ -140,11 +140,29 @@ button.primary {
 
 #laneFilter {
   height: 36px;
-  padding: 0 10px;
-  border-radius: 8px;
+  padding: 0 36px 0 12px;
+  border-radius: 10px;
   border: 1px solid var(--border);
-  background: var(--card);
+  background-color: var(--card);
   color: var(--text);
+  font-size: 14px;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+    linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) 14px,
+    calc(100% - 12px) 14px;
+  background-size: 6px 6px;
+  background-repeat: no-repeat;
+}
+
+#laneFilter:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
 }
 
 #showAllBtn {
