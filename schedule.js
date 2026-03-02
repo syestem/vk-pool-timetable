@@ -128,9 +128,6 @@ function parseLaneSchedule(rows) {
 
     if (DAYS.includes(row[0])) {
       const day = row[0];
-      result[day] = times.map(t => ({ time: t, lanes: [] }));
-
-      // 👉 начинаем со СЛЕДУЮЩЕЙ строки
       // создаём слоты
 result[day] = times.map(t => ({ time: t, lanes: [] }));
 
@@ -164,24 +161,6 @@ while (r < rows.length && !DAYS.includes(rows[r]?.[0])) {
 }
 
 i = r - 1;
-
-      while (r < rows.length && !DAYS.includes(rows[r]?.[0])) {
-        const lane = parseInt(rows[r]?.[2], 10);
-
-        if (!Number.isNaN(lane) && lane >= 1 && lane <= 6) {
-          timeCols.forEach((col, idx) => {
-            const cell = rows[r][col];
-            result[day][idx].lanes.push({
-              lane,
-              busy: Boolean(cell && cell.trim())
-            });
-          });
-        }
-        r++;
-      }
-
-      // перескакиваем обработанные строки
-      i = r - 1;
     }
   }
 
