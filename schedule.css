@@ -1,179 +1,56 @@
+:root {
+  --bg: #f5f6f8;
+  --card: #ffffff;
+  --accent: #2b5c8a;
+  --accent-soft: #e6f0fa;
+  --text: #1c1d1f;
+  --muted: #6d7885;
+  --border: #dce1e6;
+  --free: #e6f6ea;
+  --busy: #e56b6b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
-  padding: 16px;
-  font-family: -apple-system, BlinkMacSystemFont, Roboto, Arial;
-  background: #f5f6f8;
-}
-
-.card {
-  max-width: 960px;
-  margin: auto;
-  background: #fff;
-  border-radius: 14px;
-  padding: 16px;
-}
-
-h2 {
-  margin: 0 0 12px;
-}
-
-.group {
-  display: flex;
-  gap: 6px;
-}
-
-button {
-  border: 1px solid #e1e3e6;
-  background: #e5e7ea;
-  border-radius: 8px;
-  padding: 6px 12px;
-  cursor: pointer;
-}
-
-button.primary {
-  background: #2a5885;
-  color: #fff;
-  border-color: transparent;
-}
-
-.tabs {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 12px;
-  flex-wrap: wrap;
-}
-
-.tabs button {
-  background: #e5e7ea;
-}
-
-.tabs button.active {
-  background: #2a5885;
-  color: #fff;
-}
-
-.grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
-}
-
-.slot {
-  background: #f8f9fa;
-  border-radius: 12px;
-  padding: 10px;
-}
-
-.slot.now {
-  outline: 2px solid #2a5885;
-}
-
-.time {
-  font-weight: 600;
-  margin-bottom: 6px;
-}
-
-.count {
-  margin-left: 6px;
-  color: #6d7885;
-  font-weight: normal;
-}
-
-.badge {
-  margin-left: 6px;
-  font-size: 11px;
-  padding: 2px 6px;
-  border-radius: 6px;
-}
-
-.badge.now {
-  background: #2a5885;
-  color: #fff;
-}
-
-.slot.best {
-  border: 1px solid rgba(76, 175, 80, 0.5);
-  background: rgba(76, 175, 80, 0.08);
-}
-
-.badge.best {
-  background: #4caf50;
-  color: #fff;
-}
-
-.badge.full {
-  background: #e06666;
-  color: #fff;
-}
-
-.lanes {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.lane {
-  min-width: 28px;
-  text-align: center;
-  padding: 4px 6px;
-  border-radius: 6px;
-  font-size: 13px;
-}
-
-.lane.free {
-  background: #e6f4ea;
-}
-
-.lane.busy {
-  background: #e06666;
-  color: #fff;
-}
-
-.slot.empty {
-  grid-column: 1 / -1;
-  text-align: center;
-  color: #6d7885;
-}
-
-.filters {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-#laneFilter {
-  height: 36px;
-  padding: 0 36px 0 12px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background-color: var(--card);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
   color: var(--text);
-  font-size: 14px;
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  background-image:
-    linear-gradient(45deg, transparent 50%, var(--muted) 50%),
-    linear-gradient(135deg, var(--muted) 50%, transparent 50%);
-  background-position:
-    calc(100% - 18px) 14px,
-    calc(100% - 12px) 14px;
-  background-size: 6px 6px;
-  background-repeat: no-repeat;
 }
+
+.app {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+h1 {
+  margin: 0 0 16px;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+/* ===== CONTROLS ===== */
+
 .controls {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  background: var(--card);
+  border-radius: 16px;
+  padding: 12px;
   margin-bottom: 16px;
 }
 
 .controls-row {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   flex-wrap: wrap;
+}
+
+.controls-row + .controls-row {
+  margin-top: 10px;
 }
 
 .controls-group {
@@ -186,46 +63,156 @@ button.primary {
   margin-left: auto;
 }
 
-/* дни недели */
-.controls-row.days {
-  gap: 6px;
-  flex-wrap: wrap;
-}
+/* buttons */
 
-/* кнопки */
-button {
+.btn {
   height: 36px;
   padding: 0 14px;
   border-radius: 10px;
   border: none;
-  background: var(--chip);
+  background: #e5e7eb;
   color: var(--text);
   font-size: 14px;
   cursor: pointer;
 }
 
-button.primary {
+.btn.primary {
   background: var(--accent);
   color: #fff;
 }
 
-button.ghost {
+.btn.ghost {
   background: transparent;
   border: 1px solid var(--border);
 }
 
-/* select уже стилизован ранее — он сюда идеально впишется */
-#laneFilter:focus {
-  outline: none;
+/* select */
+
+.select {
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #fff;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* days */
+
+.controls-row.days button {
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 18px;
+  font-size: 13px;
+}
+
+.controls-row.days button.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* ===== CONTENT ===== */
+
+.content {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 600px) {
+  .content {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* slot card */
+
+.slot {
+  background: var(--card);
+  border-radius: 14px;
+  padding: 12px;
+  border: 1px solid var(--border);
+}
+
+.slot.now {
   border-color: var(--accent);
   box-shadow: 0 0 0 2px var(--accent-soft);
 }
 
-#showAllBtn {
-  height: 36px;
-  padding: 0 12px;
+.slot.best {
+  border-color: #3aa76d;
+  box-shadow: 0 0 0 2px #e6f6ea;
+}
+
+/* header */
+
+.slot .time {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.slot .count {
+  margin-left: auto;
+  font-weight: 500;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* badges */
+
+.badge {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.badge.now {
+  background: var(--accent);
+  color: #fff;
+}
+
+.badge.full {
+  background: #e56b6b;
+  color: #fff;
+}
+
+/* lanes */
+
+.lanes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.lane {
+  min-width: 32px;
+  height: 28px;
   border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--accent-soft);
-  color: var(--accent);
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lane.free {
+  background: var(--free);
+  color: #1c7c3c;
+}
+
+.lane.busy {
+  background: var(--busy);
+  color: #fff;
+}
+
+/* empty */
+
+.slot.empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--muted);
 }
