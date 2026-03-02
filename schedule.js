@@ -130,24 +130,29 @@ function parseLaneSchedule(rows) {
       const day = row[0];
       result[day] = times.map(t => ({ time: t, lanes: [] }));
 
-      let r = i;
-while (r < rows.length && !DAYS.includes(rows[r]?.[0])) {
-  const lane = parseInt(rows[r]?.[2], 10); // ← ВАЖНО
+      // 👉 начинаем со СЛЕДУЮЩЕЙ строки
+      let r = i + 1;
 
-  if (!Number.isNaN(lane) && lane >= 1 && lane <= 6) {
-    timeCols.forEach((col, idx) => {
-      const cell = rows[r][col];
-      result[day][idx].lanes.push({
-        lane,
-        busy: Boolean(cell && cell.trim())
-      });
-    });
-  }
-  r++;
-}
+      while (r < rows.length && !DAYS.includes(rows[r]?.[0])) {
+        const lane = parseInt(rows[r]?.[2], 10);
+
+        if (!Number.isNaN(lane) && lane >= 1 && lane <= 6) {
+          timeCols.forEach((col, idx) => {
+            const cell = rows[r][col];
+            result[day][idx].lanes.push({
+              lane,
+              busy: Boolean(cell && cell.trim())
+            });
+          });
+        }
+        r++;
+      }
+
+      // перескакиваем обработанные строки
       i = r - 1;
     }
   }
+
   return result;
 }
 
