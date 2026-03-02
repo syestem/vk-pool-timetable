@@ -19,12 +19,19 @@
       <button data-pool="small">Малый бассейн</button>
     </div>
 
-    <div class="group">
-      <button data-filter="0" class="primary">Все</button>
-      <button data-filter="1">Только свободные</button>
-      <button data-filter="2">От 2 дорожек</button>
-      <button data-filter="3">От 3 дорожек</button>
-    </div>
+    <div class="filters">
+      <select id="laneFilter">
+        <option value="0">Все</option>
+        <option value="1">Любая свободная</option>
+        <option value="2">От 2 дорожек</option>
+        <option value="3">От 3 дорожек</option>
+        <option value="4">От 4 дорожек</option>
+        <option value="5">От 5 дорожек</option>
+        <option value="6">От 6 дорожек</option>
+  </select>
+
+  <button id="showAllBtn">Показать всё</button>
+</div>
   </div>
 
   <div id="dayTabs" class="tabs"></div>
