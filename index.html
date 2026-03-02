@@ -2,45 +2,51 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Расписание бассейна</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
-  <link rel="stylesheet" href="schedule.css" />
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 
-<div class="card">
-  <h2 id="title"></h2>
+<div class="app">
 
+  <h1 id="title">Расписание бассейна</h1>
+
+  <!-- ===== CONTROLS ===== -->
   <div class="controls">
 
-  <div class="controls-row">
-    <div class="controls-group">
-      <button data-pool="big" class="primary">Большой бассейн</button>
-      <button data-pool="small">Малый бассейн</button>
+    <!-- row 1 -->
+    <div class="controls-row">
+      <div class="controls-group">
+        <button data-pool="big" class="btn primary">Большой бассейн</button>
+        <button data-pool="small" class="btn">Малый бассейн</button>
+      </div>
+
+      <div class="controls-group right">
+        <select id="laneFilter" class="select">
+          <option value="0">Все</option>
+          <option value="1">Любая свободная</option>
+          <option value="2">От 2 дорожек</option>
+          <option value="3">От 3 дорожек</option>
+          <option value="4">От 4 дорожек</option>
+          <option value="5">От 5 дорожек</option>
+          <option value="6">От 6 дорожек</option>
+        </select>
+
+        <button id="showAllBtn" class="btn ghost">Показать всё</button>
+      </div>
     </div>
 
-    <div class="controls-group right">
-      <select id="laneFilter">
-        <option value="0">Все</option>
-        <option value="1">Любая свободная</option>
-        <option value="2">От 2 дорожек</option>
-        <option value="3">От 3 дорожек</option>
-        <option value="4">От 4 дорожек</option>
-        <option value="5">От 5 дорожек</option>
-        <option value="6">От 6 дорожек</option>
-      </select>
+    <!-- row 2 -->
+    <div class="controls-row days" id="dayTabs"></div>
 
-      <button id="showAllBtn" class="ghost">Показать всё</button>
-    </div>
   </div>
 
-  <div class="controls-row days" id="dayTabs"></div>
+  <!-- ===== CONTENT ===== -->
+  <div id="scheduleContent" class="content"></div>
 
-</div>
-
-  <div id="scheduleContent" class="grid"></div>
 </div>
 
 <script src="schedule.js"></script>
