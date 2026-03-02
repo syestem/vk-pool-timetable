@@ -107,45 +107,54 @@ async function fetchCSV(gid) {
 /* ================= PARSER ================= */
 function parseSchedule(rows) {
   const res = {};
-  const timeRow = rows.findIndex(r => r[0]?.toLowerCase().includes('время'));
+
+  // строка с "время на воде"
+  const timeRow = rows.findIndex(r =>
+    r[0]?.toLowerCase().includes('время')
+  );
   if (timeRow === -1) return res;
 
   const times = [];
   const cols = [];
 
-  rows[timeRow].forEach((c,i)=>{
-    if (/\d+:\d+.*\d+:\d+/.test(c)) {
+  rows[timeRow].forEach((c, idx) => {
+    if (/\d{1,2}:\d{2}\s*[-–]\s*\d{1,2}:\d{2}/.test(c)) {
       times.push(c.trim());
-      cols.push(i);
+      cols.push(idx);
     }
   });
 
-  if (DAYS.includes(rows[i][0])) {
-  const day = rows[i][0];
-  result[day] = times.map(t => ({ time: t, lanes: [] }));
+  for (let i = timeRow + 1; i < rows.length; i++) {
+    const row = rows[i];
+    if (!row || !DAYS.includes(row[0])) continue;
 
-  let r = i; // ← ВАЖНО
+    const day = row[0];
+    res[day] = times.map(t => ({ time: t, lanes: [] }));
 
-  while (rows[r] && !DAYS.includes(rows[r][0]) || r === i) {
+    let r = i;
 
-    const laneCell = rows[r].find(c => /^[1-6]$/.test(c?.trim()));
-    const lane = Number(laneCell);
+    while (rows[r] && (!DAYS.includes(rows[r][0]) || r === i)) {
 
-    if (lane >= 1 && lane <= 6) {
-      timeCols.forEach((col, idx) => {
-        const cell = rows[r][col];
-        result[day][idx].lanes.push({
-          lane,
-          busy: Boolean(cell && cell.trim())
+      // ищем номер дорожки В ЛЮБОЙ КОЛОНКЕ
+      const laneCell = rows[r].find(c => /^[1-6]$/.test(c?.trim()));
+      const lane = Number(laneCell);
+
+      if (lane >= 1 && lane <= 6) {
+        cols.forEach((col, idx) => {
+          const cell = rows[r][col];
+          res[day][idx].lanes.push({
+            lane,
+            busy: Boolean(cell && cell.trim())
+          });
         });
-      });
+      }
+
+      r++;
     }
 
-    r++;
+    i = r - 1; // перескакиваем обработанные строки
   }
 
-  i = r - 1;
-}
   return res;
 }
 
@@ -162,38 +171,55 @@ function renderDayTabs() {
 }
 
 function renderDay() {
-  contentEl.innerHTML='';
-  const today=getToday();
+  contentEl.innerHTML = '';
 
-  parsed[activeDay].forEach(slot=>{
-    const total=slot.lanes.length;
-    const free=slot.lanes.filter(l=>!l.busy).length;
+  if (!parsed[activeDay]) {
+    contentEl.innerHTML =
+      '<div class="slot empty">Нет данных на этот день</div>';
+    return;
+  }
+
+  const today = getToday();
+
+  parsed[activeDay].forEach(slot => {
+    const total = slot.lanes.length;
+    const free = slot.lanes.filter(l => !l.busy).length;
+
     if (free < minFreeLanes) return;
 
-    const isNow=activeDay===today && isNowIn(slot.time);
+    const isNow = activeDay === today && isNowIn(slot.time);
 
-    const div=document.createElement('div');
-    div.className='slot'+(isNow?' now':'');
+    const div = document.createElement('div');
+    div.className = 'slot' + (isNow ? ' now' : '');
 
-    div.innerHTML=`
+    div.innerHTML = `
       <div class="time">
         ${slot.time}
         <span class="count">Свободно: ${free}/${total}</span>
-        ${isNow?'<span class="badge now">СЕЙЧАС</span>':''}
-        ${free===0?'<span class="badge full">Все дорожки заняты</span>':''}
+        ${isNow ? '<span class="badge now">СЕЙЧАС</span>' : ''}
+        ${free === 0 ? '<span class="badge full">Все дорожки заняты</span>' : ''}
       </div>
       <div class="lanes">
-        ${slot.lanes.map(l=>`<span class="lane ${l.busy?'busy':'free'}">${l.lane}</span>`).join('')}
+        ${slot.lanes.map(l =>
+          `<span class="lane ${l.busy ? 'busy' : 'free'}">${l.lane}</span>`
+        ).join('')}
       </div>
     `;
+
     contentEl.appendChild(div);
   });
 
-  if (!contentEl.children.length)
-    contentEl.innerHTML='<div class="slot empty">Нет подходящих слотов</div>';
+  if (!contentEl.children.length) {
+    contentEl.innerHTML =
+      '<div class="slot empty">Нет подходящих слотов</div>';
+  }
 
-  if (activeDay===today)
-    setTimeout(()=>document.querySelector('.slot.now')?.scrollIntoView({block:'center'}),0);
+  if (activeDay === today) {
+    setTimeout(() => {
+      document.querySelector('.slot.now')
+        ?.scrollIntoView({ block: 'center' });
+    }, 0);
+  }
 }
 
 /* ================= HELPERS ================= */
