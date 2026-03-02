@@ -17,13 +17,6 @@ h2 {
   margin: 0 0 12px;
 }
 
-.controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
 .group {
   display: flex;
   gap: 6px;
@@ -168,7 +161,60 @@ button.primary {
   background-size: 6px 6px;
   background-repeat: no-repeat;
 }
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
 
+.controls-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.controls-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.controls-group.right {
+  margin-left: auto;
+}
+
+/* дни недели */
+.controls-row.days {
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* кнопки */
+button {
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: none;
+  background: var(--chip);
+  color: var(--text);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+button.primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+button.ghost {
+  background: transparent;
+  border: 1px solid var(--border);
+}
+
+/* select уже стилизован ранее — он сюда идеально впишется */
 #laneFilter:focus {
   outline: none;
   border-color: var(--accent);
