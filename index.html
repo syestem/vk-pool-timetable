@@ -2,8 +2,10 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <title>Расписание бассейна</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Расписание бассейна</title>
+
+  <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
   <link rel="stylesheet" href="schedule.css" />
 </head>
 <body>
@@ -12,21 +14,17 @@
   <h2 id="title"></h2>
 
   <div class="controls">
-    <button data-pool="big" class="primary">Большой бассейн</button>
-    <button data-pool="small">Малый бассейн</button>
+    <div class="group">
+      <button data-pool="big" class="primary">Большой бассейн</button>
+      <button data-pool="small">Малый бассейн</button>
+    </div>
 
-    <button id="onlyFreeBtn">Только свободные</button>
-    <button id="showAllBtn">Показать всё</button>
-
-   <select id="laneFilter">
-      <option value="0">Все</option>
-      <option value="1">Любая свободная</option>
-      <option value="2">От 2 дорожек подряд</option>
-      <option value="3">От 3 дорожек подряд</option>
-      <option value="4">От 4 дорожек подряд</option>
-      <option value="5">От 5 дорожек подряд</option>
-      <option value="6">Все 6 дорожек</option>
-    </select>
+    <div class="group">
+      <button data-filter="0" class="primary">Все</button>
+      <button data-filter="1">Только свободные</button>
+      <button data-filter="2">От 2 дорожек</button>
+      <button data-filter="3">От 3 дорожек</button>
+    </div>
   </div>
 
   <div id="dayTabs" class="tabs"></div>
