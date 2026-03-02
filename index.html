@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Расписание бассейна</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <link rel="stylesheet" href="schedule.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="schedule.css" />
 </head>
 <body>
 
@@ -15,15 +14,19 @@
   <div class="controls">
     <button data-pool="big" class="primary">Большой бассейн</button>
     <button data-pool="small">Малый бассейн</button>
+
     <button id="onlyFreeBtn">Только свободные</button>
     <button id="showAllBtn">Показать всё</button>
+
+    <select id="laneFilter">
+      <option value="1">Любая свободная</option>
+      <option value="2">2 дорожки подряд</option>
+    </select>
   </div>
 
-  <div id="dayTabs" class="day-tabs"></div>
+  <div id="dayTabs" class="tabs"></div>
 
-  <div id="scheduleContent" class="schedule-content">
-    Загрузка…
-  </div>
+  <div id="scheduleContent" class="grid"></div>
 </div>
 
 <script src="schedule.js"></script>
