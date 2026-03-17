@@ -91,8 +91,8 @@ async function loadIndex() {
     if (!c[0]) return;
     scheduleIndex.push({
       month: c[0].trim(),
-      big: Number(c[1]) || null,
-      small: Number(c[2]) || null
+      big: c[1] ? Number(c[1]) : null,
+      small: c[2] ? Number(c[2]) : null
     });
   });
 }
