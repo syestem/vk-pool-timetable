@@ -9,6 +9,10 @@ const FALLBACK_SCHEDULES = {
   big: './fallback/big.csv',
   small: './fallback/small.csv'
 };
+const THEME_ICONS = {
+  dark: '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 15.2A8.2 8.2 0 0 1 8.8 4 8.9 8.9 0 1 0 20 15.2Z" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  light: '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.9"/><path d="M12 2.75V5.1M12 18.9v2.35M21.25 12H18.9M5.1 12H2.75M18.54 5.46l-1.66 1.66M7.12 16.88l-1.66 1.66M18.54 18.54l-1.66-1.66M7.12 7.12 5.46 5.46" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>'
+};
 
 const DAYS = [
   'Понедельник','Вторник','Среда',
@@ -327,7 +331,7 @@ function applyTheme(theme) {
   document.body.dataset.theme = normalizedTheme;
   localStorage.setItem('theme', normalizedTheme);
   themeToggleText.textContent = isDark ? 'Светлая тема' : 'Темная тема';
-  themeToggleIcon.textContent = isDark ? '○' : '◐';
+  themeToggleIcon.innerHTML = isDark ? THEME_ICONS.light : THEME_ICONS.dark;
 }
 
 async function fetchSheetText(url) {
