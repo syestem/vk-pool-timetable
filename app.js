@@ -5,6 +5,10 @@ if (isVK) vkBridge.send('VKWebAppInit').catch(() => {});
 /* ================= CONSTANTS ================= */
 const SHEET_ID = '11yaPysnuMfkXtwvZSOOohogKnvT0py7rWuKNyAs5ud8';
 const INDEX_GID = 887181046;
+const FALLBACK_SCHEDULES = {
+  big: './fallback/big.csv',
+  small: './fallback/small.csv'
+};
 
 const DAYS = [
   'Понедельник','Вторник','Среда',
@@ -17,8 +21,14 @@ let parsed = {};
 let activeDay = null;
 let activePool = 'big';
 let minFreeLanes = 0;
+let midnightTimerId = null;
+let currentRequestId = 0;
+let indexPromise = null;
 const laneFilter = document.getElementById('laneFilter');
 const showAllBtn = document.getElementById('showAllBtn');
+const themeToggle = document.getElementById('themeToggle');
+const themeToggleText = document.getElementById('themeToggleText');
+const themeToggleIcon = document.getElementById('themeToggleIcon');
 
 laneFilter.onchange = () => {
   minFreeLanes = Number(laneFilter.value);
@@ -30,87 +40,124 @@ showAllBtn.onclick = () => {
   laneFilter.value = '0';
   renderDay();
 };
+
+themeToggle.onclick = () => {
+  const nextTheme = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
+  applyTheme(nextTheme);
+};
 /* ================= DOM ================= */
 const titleEl = document.getElementById('title');
 const contentEl = document.getElementById('scheduleContent');
 const dayTabs = document.getElementById('dayTabs');
 const poolBtns = document.querySelectorAll('[data-pool]');
-const filterBtns = document.querySelectorAll('[data-filter]');
+
+poolBtns.forEach(btn => {
+  btn.onclick = () => {
+    if (activePool === btn.dataset.pool) return;
+
+    poolBtns.forEach(b => b.classList.remove('primary'));
+    btn.classList.add('primary');
+    activePool = btn.dataset.pool;
+    init();
+  };
+});
 
 /* ================= INIT ================= */
+initTheme();
 init();
 
 async function init() {
+  const requestId = ++currentRequestId;
   titleEl.textContent = `Расписание бассейна на ${getCurrentMonth()}`;
 
-  poolBtns.forEach(btn => {
-    btn.onclick = () => {
-      poolBtns.forEach(b => b.classList.remove('primary'));
-      btn.classList.add('primary');
-      activePool = btn.dataset.pool;
-      init();
-    };
-  });
+  try {
+    if (!scheduleIndex.length) await loadIndex();
 
-  filterBtns.forEach(btn => {
-    btn.onclick = () => {
-      filterBtns.forEach(b => b.classList.remove('primary'));
-      btn.classList.add('primary');
-      minFreeLanes = Number(btn.dataset.filter);
-      renderDay();
-    };
-  });
+    const entry = findMonth();
+    const rows = await loadScheduleRows(activePool, entry?.[activePool]);
+    if (requestId !== currentRequestId) return;
 
-  if (!scheduleIndex.length) await loadIndex();
+    parsed = parseSchedule(rows);
 
-  const entry = findMonth();
-  if (!entry || !entry[activePool]) {
-    contentEl.innerHTML = '<div class="slot empty">Нет данных</div>';
-    return;
+    const today = getToday();
+    activeDay = parsed[today] ? today : Object.keys(parsed)[0] || null;
+
+    renderDayTabs();
+    renderDay();
+    scheduleMidnightSwitch();
+  } catch (error) {
+    if (requestId !== currentRequestId) return;
+
+    parsed = {};
+    activeDay = null;
+    dayTabs.innerHTML = '';
+    showMessage('Не удалось загрузить расписание');
+    console.error('Failed to initialize schedule', error);
   }
-
-  const rows = await fetchCSV(entry[activePool]);
-  parsed = parseSchedule(rows);
-
-  const today = getToday();
-  activeDay = parsed[today] ? today : Object.keys(parsed)[0];
-
-  renderDayTabs();
-  renderDay();
-  scheduleMidnightSwitch();
 }
 
 /* ================= FETCH ================= */
 async function loadIndex() {
-  const text = await fetch(
-    `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${INDEX_GID}`
-  ).then(r => r.text());
+  if (indexPromise) {
+    await indexPromise;
+    return;
+  }
 
-  text.replace(/^\uFEFF/, '').split(/\r?\n/).slice(1).forEach(r => {
-    const c = r.split(',');
-    if (!c[0]) return;
-    scheduleIndex.push({
+  indexPromise = loadIndexOnce();
+  await indexPromise;
+}
+
+async function loadIndexOnce() {
+  const text = await fetchSheetText(
+    `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${INDEX_GID}`
+  );
+
+  scheduleIndex = parseCSV(text).slice(1).reduce((acc, c) => {
+    if (!c[0]) return acc;
+    acc.push({
       month: c[0].trim(),
       big: c[1] ? Number(c[1]) : null,
       small: c[2] ? Number(c[2]) : null
     });
-  });
+    return acc;
+  }, []);
 }
 
 async function fetchCSV(gid) {
-  return fetch(
+  const text = await fetchSheetText(
     `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}`
-  ).then(r => r.text())
-   .then(t => t.replace(/^\uFEFF/, '').split(/\r?\n/).map(r => r.split(',')));
+  );
+  return parseCSV(text);
+}
+
+async function fetchLocalCSV(path) {
+  const text = await fetchSheetText(path);
+  return parseCSV(text);
+}
+
+async function loadScheduleRows(pool, gid) {
+  if (gid) {
+    try {
+      return await fetchCSV(gid);
+    } catch (error) {
+      console.warn(`Failed to load remote schedule for pool '${pool}'`, error);
+    }
+  }
+
+  const fallbackPath = FALLBACK_SCHEDULES[pool];
+  if (!fallbackPath) {
+    throw new Error(`No fallback schedule configured for pool '${pool}'`);
+  }
+
+  return fetchLocalCSV(fallbackPath);
 }
 
 /* ================= PARSER ================= */
 function parseSchedule(rows) {
   const res = {};
 
-  // строка с "время на воде"
-  const timeRow = rows.findIndex(r =>
-    r[0]?.toLowerCase().includes('время')
+  const timeRow = rows.findIndex(row =>
+    row.some(cell => isTimeHeaderCell(cell))
   );
   if (timeRow === -1) return res;
 
@@ -118,28 +165,27 @@ function parseSchedule(rows) {
   const cols = [];
 
   rows[timeRow].forEach((c, idx) => {
-    if (/\d{1,2}:\d{2}\s*[-–]\s*\d{1,2}:\d{2}/.test(c)) {
-      times.push(c.trim());
+    if (isTimeRange(c)) {
+      times.push(normalizeCell(c));
       cols.push(idx);
     }
   });
 
+  if (!times.length) return res;
+
   for (let i = timeRow + 1; i < rows.length; i++) {
     const row = rows[i];
-    if (!row || !DAYS.includes(row[0])) continue;
+    const day = getDayName(row);
+    if (!row || !day) continue;
 
-    const day = row[0];
     res[day] = times.map(t => ({ time: t, lanes: [] }));
 
     let r = i;
 
-    while (rows[r] && (!DAYS.includes(rows[r][0]) || r === i)) {
+    while (rows[r] && (r === i || !getDayName(rows[r]))) {
+      const lane = getLaneNumber(rows[r]);
 
-      // ищем номер дорожки В ЛЮБОЙ КОЛОНКЕ
-      const laneCell = rows[r].find(c => /^[1-6]$/.test(c?.trim()));
-      const lane = Number(laneCell);
-
-      if (lane >= 1 && lane <= 6) {
+      if (lane !== null) {
         cols.forEach((col, idx) => {
           const cell = rows[r][col];
           res[day][idx].lanes.push({
@@ -161,33 +207,36 @@ function parseSchedule(rows) {
 /* ================= RENDER ================= */
 function renderDayTabs() {
   dayTabs.innerHTML = '';
-  Object.keys(parsed).forEach(d=>{
-    const b=document.createElement('button');
-    b.textContent=d;
-    b.className=d===activeDay?'active':'';
-    b.onclick=()=>{activeDay=d;renderDayTabs();renderDay();};
-    dayTabs.appendChild(b);
+  Object.keys(parsed).forEach(day => {
+    const button = document.createElement('button');
+    button.textContent = day;
+    button.className = day === activeDay ? 'active' : '';
+    button.onclick = () => {
+      activeDay = day;
+      renderDayTabs();
+      renderDay();
+    };
+    dayTabs.appendChild(button);
   });
 }
 
 function renderDay() {
-  const maxFree = Math.max(
-  ...parsed[activeDay].map(s =>
-    s.lanes.filter(l => !l.busy).length
-  ),
-  0
-);
   contentEl.innerHTML = '';
 
-  if (!parsed[activeDay]) {
-    contentEl.innerHTML =
-      '<div class="slot empty">Нет данных на этот день</div>';
+  const daySlots = parsed[activeDay];
+  if (!daySlots?.length) {
+    showMessage('Нет данных на этот день');
     return;
   }
 
+  const maxFree = Math.max(
+    ...daySlots.map(s => s.lanes.filter(l => !l.busy).length),
+    0
+  );
+
   const today = getToday();
 
-  parsed[activeDay].forEach(slot => {
+  daySlots.forEach(slot => {
     const total = slot.lanes.length;
     const free = slot.lanes.filter(l => !l.busy).length;
 
@@ -198,10 +247,10 @@ function renderDay() {
     const div = document.createElement('div');
     const isBest = free === maxFree && maxFree > 0;
 
-div.className =
-  'slot' +
-  (isNow ? ' now' : '') +
-  (isBest ? ' best' : '');
+    div.className =
+      'slot' +
+      (isNow ? ' now' : '') +
+      (isBest ? ' best' : '');
 
     div.innerHTML = `
       <div class="time">
@@ -220,10 +269,7 @@ div.className =
     contentEl.appendChild(div);
   });
 
-  if (!contentEl.children.length) {
-    contentEl.innerHTML =
-      '<div class="slot empty">Нет подходящих слотов</div>';
-  }
+  if (!contentEl.children.length) showMessage('Нет подходящих слотов');
 
   if (activeDay === today) {
     setTimeout(() => {
@@ -234,31 +280,162 @@ div.className =
 }
 
 /* ================= HELPERS ================= */
-function getCurrentMonth(){
-  const d=new Date();
-  return d.toLocaleString('ru-RU',{month:'long'})
-    .replace(/^./,c=>c.toUpperCase())+' '+d.getFullYear();
+function getCurrentMonth() {
+  const date = new Date();
+  return date.toLocaleString('ru-RU', { month: 'long' })
+    .replace(/^./, c => c.toUpperCase()) + ' ' + date.getFullYear();
 }
-function getToday(){
-  const d=new Date().getDay();
-  return DAYS[d===0?6:d-1];
+function getToday() {
+  const dayIndex = new Date().getDay();
+  return DAYS[dayIndex === 0 ? 6 : dayIndex - 1];
 }
-function isNowIn(t){
-  const n=new Date();
-  const [a,b]=t.split('-').map(x=>{
-    const [h,m]=x.split(':').map(Number);
-    const d=new Date();d.setHours(h,m,0,0);return d;
+function isNowIn(timeRange) {
+  const now = new Date();
+  const [start, end] = timeRange.split('-').map(value => {
+    const [hours, minutes] = value.split(':').map(Number);
+    const date = new Date();
+    date.setHours(hours, minutes, 0, 0);
+    return date;
   });
-  return n>=a && n<=b;
+  return now >= start && now <= end;
 }
-function findMonth(){
-  const m=getCurrentMonth().toLowerCase();
-  return scheduleIndex.find(x=>x.month.toLowerCase()===m);
+function findMonth() {
+  const month = getCurrentMonth().toLowerCase();
+  return scheduleIndex.find(entry => entry.month.toLowerCase() === month);
+}
+
+function showMessage(message) {
+  const messageEl = document.createElement('div');
+  messageEl.className = 'slot empty';
+  messageEl.textContent = message;
+  contentEl.replaceChildren(messageEl);
+}
+
+function initTheme() {
+  const savedTheme = localStorage.getItem('theme');
+  const preferredTheme = window.matchMedia('(prefers-color-scheme: dark)').matches
+    ? 'dark'
+    : 'light';
+
+  applyTheme(savedTheme || preferredTheme);
+}
+
+function applyTheme(theme) {
+  const normalizedTheme = theme === 'dark' ? 'dark' : 'light';
+  const isDark = normalizedTheme === 'dark';
+
+  document.body.dataset.theme = normalizedTheme;
+  localStorage.setItem('theme', normalizedTheme);
+  themeToggleText.textContent = isDark ? 'Светлая тема' : 'Темная тема';
+  themeToggleIcon.textContent = isDark ? '○' : '◐';
+}
+
+async function fetchSheetText(url) {
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error(`Request failed with status ${response.status}`);
+  }
+
+  return response.text();
+}
+
+function parseCSV(text) {
+  const rows = [];
+  let row = [];
+  let value = '';
+  let inQuotes = false;
+  const normalizedText = text.replace(/^\uFEFF/, '');
+
+  for (let i = 0; i < normalizedText.length; i++) {
+    const char = normalizedText[i];
+    const nextChar = normalizedText[i + 1];
+
+    if (char === '"') {
+      if (inQuotes && nextChar === '"') {
+        value += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+
+    if (char === ',' && !inQuotes) {
+      row.push(value);
+      value = '';
+      continue;
+    }
+
+    if ((char === '\n' || char === '\r') && !inQuotes) {
+      if (char === '\r' && nextChar === '\n') i++;
+      row.push(value);
+      if (row.some(cell => cell.length > 0)) rows.push(row);
+      row = [];
+      value = '';
+      continue;
+    }
+
+    value += char;
+  }
+
+  row.push(value);
+  if (row.some(cell => cell.length > 0)) rows.push(row);
+
+  return rows;
+}
+
+function normalizeCell(value) {
+  return String(value || '').trim();
+}
+
+function normalizeKey(value) {
+  return normalizeCell(value).toLowerCase().replace(/\s+/g, ' ');
+}
+
+function isTimeRange(value) {
+  return /\d{1,2}:\d{2}\s*[-–]\s*\d{1,2}:\d{2}/.test(normalizeCell(value));
+}
+
+function isTimeHeaderCell(value) {
+  const normalized = normalizeKey(value);
+  return normalized.includes('время') || isTimeRange(value);
+}
+
+function getDayName(row) {
+  if (!row) return null;
+
+  for (const cell of row) {
+    const day = DAYS.find(name => normalizeKey(cell) === name.toLowerCase());
+    if (day) return day;
+  }
+
+  return null;
+}
+
+function getLaneNumber(row) {
+  if (!row) return null;
+
+  for (const cell of row) {
+    const normalized = normalizeCell(cell);
+    if (!/^\d{1,2}$/.test(normalized)) continue;
+
+    const lane = Number(normalized);
+    if (lane > 0 && lane <= 20) return lane;
+  }
+
+  return null;
 }
 
 /* ================= MIDNIGHT ================= */
-function scheduleMidnightSwitch(){
-  const n=new Date();
-  const ms=new Date(n.getFullYear(),n.getMonth(),n.getDate()+1)-n;
-  setTimeout(()=>{activeDay=getToday();renderDayTabs();renderDay();scheduleMidnightSwitch();},ms+1000);
+function scheduleMidnightSwitch() {
+  clearTimeout(midnightTimerId);
+  const now = new Date();
+  const ms = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1) - now;
+  midnightTimerId = setTimeout(() => {
+    activeDay = getToday();
+    renderDayTabs();
+    renderDay();
+    scheduleMidnightSwitch();
+  }, ms + 1000);
 }
