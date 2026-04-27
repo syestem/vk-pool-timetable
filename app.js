@@ -317,9 +317,7 @@ function showMessage(message) {
 
 function initTheme() {
   const savedTheme = localStorage.getItem('theme');
-  const preferredTheme = window.matchMedia('(prefers-color-scheme: dark)').matches
-    ? 'dark'
-    : 'light';
+  const preferredTheme = 'dark';
 
   applyTheme(savedTheme || preferredTheme);
 }
