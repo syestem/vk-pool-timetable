@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <title>Расписание бассейна</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light dark" />
 
   <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
   <link rel="stylesheet" href="styles.css" />
@@ -12,7 +13,33 @@
 
 <div class="app">
 
-  <h1 id="title">Расписание бассейна</h1>
+  <div class="hero">
+    <div class="hero-topbar">
+      <div class="hero-brand">
+        <div class="hero-brand__logo" aria-hidden="true">VK</div>
+        <div>
+          <div class="hero-brand__eyebrow">Мини-приложение</div>
+          <div class="hero-brand__title">Свободные дорожки</div>
+        </div>
+      </div>
+
+      <button id="themeToggle" class="icon-btn" type="button" aria-label="Переключить тему">
+        <span id="themeIcon" aria-hidden="true">◐</span>
+      </button>
+    </div>
+
+    <div class="hero-body">
+      <div>
+        <h1 id="title">Расписание бассейна</h1>
+        <p class="hero-subtitle">Быстрый просмотр занятости дорожек с фильтрами, подсветкой лучшего слота и адаптацией под светлую и темную темы.</p>
+      </div>
+      <div class="hero-chip-row">
+        <div class="hero-chip">VK style</div>
+        <div class="hero-chip">Live schedule</div>
+        <div class="hero-chip">Mobile first</div>
+      </div>
+    </div>
+  </div>
 
   <!-- ===== CONTROLS ===== -->
   <div class="controls">

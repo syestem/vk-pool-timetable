@@ -17,6 +17,7 @@ let parsed = {};
 let activeDay = null;
 let activePool = 'big';
 let minFreeLanes = 0;
+let theme = localStorage.getItem('vk-pool-theme') || getPreferredTheme();
 const laneFilter = document.getElementById('laneFilter');
 const showAllBtn = document.getElementById('showAllBtn');
 
@@ -36,12 +37,22 @@ const contentEl = document.getElementById('scheduleContent');
 const dayTabs = document.getElementById('dayTabs');
 const poolBtns = document.querySelectorAll('[data-pool]');
 const filterBtns = document.querySelectorAll('[data-filter]');
+const themeToggle = document.getElementById('themeToggle');
+const themeIcon = document.getElementById('themeIcon');
 
 /* ================= INIT ================= */
+applyTheme(theme);
+themeToggle.onclick = () => {
+  theme = theme === 'dark' ? 'light' : 'dark';
+  applyTheme(theme);
+  localStorage.setItem('vk-pool-theme', theme);
+};
+
 init();
 
 async function init() {
   titleEl.textContent = `Расписание бассейна на ${getCurrentMonth()}`;
+  contentEl.setAttribute('aria-busy', 'true');
 
   poolBtns.forEach(btn => {
     btn.onclick = () => {
@@ -66,6 +77,7 @@ async function init() {
   const entry = findMonth();
   if (!entry || !entry[activePool]) {
     contentEl.innerHTML = '<div class="slot empty">Нет данных</div>';
+    contentEl.setAttribute('aria-busy', 'false');
     return;
   }
 
@@ -77,6 +89,7 @@ async function init() {
 
   renderDayTabs();
   renderDay();
+  contentEl.setAttribute('aria-busy', 'false');
   scheduleMidnightSwitch();
 }
 
@@ -239,6 +252,26 @@ function getCurrentMonth(){
   return d.toLocaleString('ru-RU',{month:'long'})
     .replace(/^./,c=>c.toUpperCase())+' '+d.getFullYear();
 }
+function getPreferredTheme() {
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+function applyTheme(nextTheme) {
+  document.body.dataset.theme = nextTheme;
+  if (themeIcon) {
+    themeIcon.textContent = nextTheme === 'dark' ? '☀' : '☾';
+  }
+  if (themeToggle) {
+    themeToggle.setAttribute('aria-label', nextTheme === 'dark' ? 'Включить светлую тему' : 'Включить темную тему');
+  }
+}
+function normalizeMonthLabel(value){
+  return String(value || '')
+    .toLowerCase()
+    .replace(/\bг\.?\b/g, '')
+    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 function getToday(){
   const d=new Date().getDay();
   return DAYS[d===0?6:d-1];
@@ -252,8 +285,8 @@ function isNowIn(t){
   return n>=a && n<=b;
 }
 function findMonth(){
-  const m=getCurrentMonth().toLowerCase();
-  return scheduleIndex.find(x=>x.month.toLowerCase()===m);
+  const currentMonth = normalizeMonthLabel(getCurrentMonth());
+  return scheduleIndex.find(x => normalizeMonthLabel(x.month) === currentMonth);
 }
 
 /* ================= MIDNIGHT ================= */
