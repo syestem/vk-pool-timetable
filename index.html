@@ -12,35 +12,14 @@
 
 <div class="app">
 
-  <header class="hero">
-    <div class="hero-copy">
-      <div class="hero-badge">Мини-приложение</div>
-      <h1 id="title">Расписание бассейна</h1>
-      <p class="hero-text">
-        Свободные дорожки на сегодня и всю неделю в удобном формате.
-      </p>
-    </div>
-
-    <div class="hero-actions">
-      <button id="themeToggle" class="btn icon-btn ghost" type="button" aria-label="Сменить тему">
-        <span id="themeToggleIcon" class="theme-icon" aria-hidden="true"></span>
-        <span id="themeToggleText">Темная тема</span>
-      </button>
-    </div>
-  </header>
+  <h1 id="title">Расписание бассейна</h1>
 
   <!-- ===== CONTROLS ===== -->
-  <section class="controls card-shell">
-    <div class="controls-header">
-      <div>
-        <div class="section-title">Фильтры</div>
-        <div class="section-subtitle">Выберите бассейн, день и минимальное число свободных дорожек</div>
-      </div>
-    </div>
+  <div class="controls">
 
     <!-- row 1 -->
     <div class="controls-row">
-      <div class="controls-group segmented" role="tablist" aria-label="Выбор бассейна">
+      <div class="controls-group">
         <button data-pool="big" class="btn primary">Большой бассейн</button>
         <button data-pool="small" class="btn">Малый бассейн</button>
       </div>
@@ -63,18 +42,10 @@
     <!-- row 2 -->
     <div class="controls-row days" id="dayTabs"></div>
 
-  </section>
+  </div>
 
   <!-- ===== CONTENT ===== -->
-  <section class="schedule-panel">
-    <div class="section-heading">
-      <div>
-        <div class="section-title">Слоты</div>
-        <div class="section-subtitle">Подсвечиваем лучший вариант и текущее время на воде</div>
-      </div>
-    </div>
-    <div id="scheduleContent" class="content"></div>
-  </section>
+  <div id="scheduleContent" class="content"></div>
 
 </div>
 
